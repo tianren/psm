@@ -176,14 +176,14 @@ class psm_2blocks_per_party(partition):
         return res
     def iseasyterm(self, shapes):
         return sum(shapes) <= self.easytermmax
-    def str_paddedterm(self, shape):
+    def str_padded(self, shape):
         return "Σf(barX{})".format(shape)
-    def str_hardterm(self, shape):
+    def latex_padded(self, shape):
+        return r"\mathrm\Sigma\langle\mathbf F,\bar{{\mathbf X}} {}\rangle".format(shape)
+    def str_hard(self, shape):
         return "Σf(R{})".format(shape)
-    # def str_paddedterm(self, shape):
-    #     return "\sumFbarX{{{}}}".format(','.join((str(_) for _ in shape)))
-    # def str_hardterm(self, shape):
-    #     return "\sumFR{{{}}}".format(','.join((str(_) for _ in shape)))
+    def latex_hard(self, shape):
+        return r"\mathrm\Sigma\langle\mathbf F,\mathbf R {}\rangle".format(shape)
 
 class psm_2party_tradeoff(partition):
     def __init__(self, K, CC, otherCC=None):
@@ -195,10 +195,14 @@ class psm_2party_tradeoff(partition):
     combination_num = psm_2blocks_per_party.combination_num
     def iseasyterm(self, shapes):
         return sum(shapes) <= self.otherCC
-    def str_paddedterm(self, shape):
+    def str_padded(self, shape):
         return "Σf(barX{},Z)".format(shape)
-    def str_hardterm(self, shape):
+    def latex_padded(self, shape):
+        return r"\mathrm\Sigma\bar{{\mathbf X}} {}".format(shape)
+    def str_hard(self, shape):
         return "Σf(R{},Z)".format(shape)
+    def latex_hard(self, shape):
+        return r"\mathrm\Sigma\mathbf R {}".format(shape)
 
 class psm_2party(partition_twosets):
     def __init__(self, K, CC):
@@ -218,12 +222,16 @@ class psm_2party(partition_twosets):
         return res
     def iseasyterm(self, shapes):
         return sum((s[0] for s in shapes)) <= self.CC or sum((s[1] for s in shapes)) <= self.CC
-    def str_paddedterm(self, shape):
+    def str_padded(self, shape):
         return "Σf(barX{})".format(shape)
-    def str_hardterm(self, shape):
+    def latex_padded(self, shape):
+        return r"\mathrm\Sigma\langle\mathbf F,\bar{{\mathbf X}} {}\rangle".format(shape)
+    def str_hard(self, shape):
         return "Σf(R{})".format(shape)
+    def latex_hard(self, shape):
+        return r"\mathrm\Sigma\langle\mathbf F,\mathbf R {}\rangle".format(shape)
 
-def general_solver(P, mod, verbose=False):
+def general_solver(P, mod, verbose=False, latex=False):
     _mod = (lambda x:x) if mod is None else (lambda x:x%mod)
 
     rterms = tuple(pattern_iter(P))
@@ -242,7 +250,10 @@ def general_solver(P, mod, verbose=False):
                     coeffvec.append(_mod(P.combination_num(c)))
         coeffmatrix.append(coeffvec)
         if verbose:
-            print ("{} = easy terms + {}".format(P.str_paddedterm(rterm), " + ".join(("{}*{}".format(coeff,P.str_hardterm(freeterms[si])) for si,coeff in enumerate(coeffvec) if coeff != 0))))
+            if latex:
+                print ("{} = easy".format(P.latex_padded(rterm)) + "".join((r' + {} \cdot {}'.format(coeff,P.latex_hard(freeterms[si])) for si,coeff in enumerate(coeffvec) if coeff != 0)))
+            else:
+                print ("{} = easy".format(P.str_padded(rterm)) + "".join((" + {}*{}".format(coeff,P.str_hard(freeterms[si])) for si,coeff in enumerate(coeffvec) if coeff != 0)))
 
     M = np.zeros((len(rterms), len(freeterms)), dtype=int)
     for _i, vec in enumerate(coeffmatrix):
@@ -253,7 +264,10 @@ def general_solver(P, mod, verbose=False):
 
     algo = span_eigen(M,mod)
     if algo is not None:
-        print ("{} = easy terms".format(P.str_hardterm(tuple())) + "".join((" + {}*{}".format(t,P.str_paddedterm(rterms[i])) for i,t in enumerate(algo) if t != 0)) + " mod {}".format(mod))
+        if latex:
+            print ("{} = easy".format(P.latex_hard(tuple())) + "".join((' + {} \\cdot {}'.format(t,P.latex_padded(rterms[i])) for i,t in enumerate(algo) if t != 0)) + " \\mod {}".format(mod))
+        else:
+            print ("{} = easy".format(P.str_hard(tuple())) + "".join((" + {}*{}".format(t,P.str_padded(rterms[i])) for i,t in enumerate(algo) if t != 0)) + " mod {}".format(mod))
     return algo
 
 if __name__ == "__main__":
@@ -263,11 +277,11 @@ if __name__ == "__main__":
         pass
 
     # Search for a k-party PSM protocol
-    general_solver(psm_2blocks_per_party(7), mod=100000000003, verbose=True)
+    # general_solver(psm_2blocks_per_party(7), mod=100000000003, verbose=True)
     # general_solver(psm_2blocks_per_party(7), mod=19, verbose=True)
     # general_solver(psm_2blocks_per_party(8), mod=19, verbose=True)
     # general_solver(psm_2blocks_per_party(9), mod=19, verbose=True)
-    # general_solver(psm_2blocks_per_party(10), mod=11, verbose=True)
+    # general_solver(psm_2blocks_per_party(10), mod=11, verbose=True, latex=True)
     # general_solver(psm_2blocks_per_party(11), mod=23, verbose=True)
     # general_solver(psm_2blocks_per_party(11), mod=11, verbose=True)
     # general_solver(psm_2blocks_per_party(12), mod=13, verbose=True)
@@ -288,3 +302,6 @@ if __name__ == "__main__":
     # for i in range(1,20):
     #    print (i)
     #    general_solver(psm_2party_tradeoff(20,i), mod=71)
+    # for i in range(1,20):
+    #    print (i)
+    #    general_solver(psm_2party_tradeoff(20,i), mod=23, latex=True)
