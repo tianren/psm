@@ -260,7 +260,7 @@ def general_solver(P, mod, verbose=False, latex=False):
         M[_i,:len(vec)] = vec
     if verbose:
         print(M)
-        print(M.shape)
+        print(r'(#masked, #hard) =', M.shape)
 
     algo = span_eigen(M,mod)
     if algo is not None:
@@ -281,7 +281,7 @@ if __name__ == "__main__":
     # general_solver(psm_2blocks_per_party(7), mod=19, verbose=True)
     # general_solver(psm_2blocks_per_party(8), mod=19, verbose=True)
     # general_solver(psm_2blocks_per_party(9), mod=19, verbose=True)
-    # general_solver(psm_2blocks_per_party(10), mod=11, verbose=True, latex=True)
+    general_solver(psm_2blocks_per_party(10), mod=11, verbose=True, latex=True)
     # general_solver(psm_2blocks_per_party(11), mod=23, verbose=True)
     # general_solver(psm_2blocks_per_party(11), mod=11, verbose=True)
     # general_solver(psm_2blocks_per_party(12), mod=13, verbose=True)
@@ -302,6 +302,6 @@ if __name__ == "__main__":
     # for i in range(1,20):
     #    print (i)
     #    general_solver(psm_2party_tradeoff(20,i), mod=71)
-    # for i in range(1,20):
-    #    print (i)
-    #    general_solver(psm_2party_tradeoff(20,i), mod=23, latex=True)
+    for i in range(1,20):
+       print (i)
+       general_solver(psm_2party_tradeoff(20,i), mod=23, latex=True)
